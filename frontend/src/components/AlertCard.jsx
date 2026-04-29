@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ShieldCheck, CloudLightning } from 'lucide-react';
 
 const AlertCard = ({ title, message, type = 'warning', time }) => {
   const styles = {
@@ -23,6 +23,13 @@ const AlertCard = ({ title, message, type = 'warning', time }) => {
       iconColor: 'text-emerald-500',
       titleColor: 'text-emerald-800',
       Icon: ShieldCheck
+    },
+    info: {
+      bg: 'bg-blue-50',
+      border: 'border-blue-100',
+      iconColor: 'text-blue-500',
+      titleColor: 'text-blue-800',
+      Icon: CloudLightning
     }
   };
 

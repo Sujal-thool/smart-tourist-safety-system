@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import { ShieldAlert, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ShieldAlert, Loader2, Mic } from 'lucide-react';
 import api from '../services/api';
 
 const PanicButton = ({ location }) => {
   const [loading, setLoading] = useState(false);
   const [triggered, setTriggered] = useState(false);
+  const [listening, setListening] = useState(false);
 
-  const handlePanic = async () => {
-    if (loading) return;
+  const handlePanic = useCallback(async () => {
+    if (loading || triggered) return;
     
     setLoading(true);
     try {
@@ -22,7 +23,57 @@ const PanicButton = ({ location }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loading, triggered, location]);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn("Speech Recognition API not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US'; // Defaulting to English, can be expanded later based on user prefs
+
+    recognition.onstart = () => setListening(true);
+    
+    recognition.onresult = (event) => {
+      const current = event.resultIndex;
+      const transcript = event.results[current][0].transcript.trim().toLowerCase();
+      
+      // Trigger panic if safe words are detected
+      if (transcript.includes('help') || transcript.includes('emergency')) {
+        handlePanic();
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error", event.error);
+      setListening(false);
+    };
+
+    recognition.onend = () => {
+      // Auto-restart listening to keep it always active
+      try {
+        recognition.start();
+      } catch (e) {
+        setListening(false);
+      }
+    };
+
+    // Start listening
+    try {
+      recognition.start();
+    } catch (e) {
+      console.error("Failed to start speech recognition", e);
+    }
+
+    return () => {
+      recognition.stop();
+    };
+  }, [handlePanic]);
 
   return (
     <button
@@ -36,6 +87,17 @@ const PanicButton = ({ location }) => {
         }
       `}
     >
+      {/* Listening Indicator */}
+      {listening && !triggered && (
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 bg-red-100 rounded-full group-hover:bg-red-500 transition-colors">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500 group-hover:bg-white transition-colors"></span>
+          </span>
+          <Mic size={12} className="text-red-600 group-hover:text-white transition-colors" />
+        </div>
+      )}
+
       {/* Pulse effect background when triggered */}
       {triggered && (
         <span className="absolute inset-0 rounded-2xl animate-ping opacity-20 bg-white"></span>
@@ -52,7 +114,7 @@ const PanicButton = ({ location }) => {
           {triggered ? 'SOS BROADCASTED' : 'EMERGENCY SOS'}
         </h3>
         <p className={`text-xs font-medium mt-1 ${triggered ? 'text-red-100' : 'text-red-400 group-hover:text-red-100'}`}>
-          {triggered ? 'Police dispatched to your location' : 'Tap to instantly alert authorities'}
+          {triggered ? 'Police dispatched to your location' : 'Say "Help" or tap to alert authorities'}
         </p>
       </div>
     </button>

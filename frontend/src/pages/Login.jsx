@@ -2,25 +2,25 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { ShieldAlert } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/v1/auth/login', { email, password });
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data));
-      if (res.data.role === 'Tourist') {
+      const user = await login(email, password);
+      if (user.role === 'Tourist') {
         navigate('/tourist/dashboard');
       } else {
         navigate('/police/dashboard');
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Login failed');
+      alert(error || 'Login failed');
     }
   };
 
@@ -57,10 +57,7 @@ const Login = () => {
             </div>
             
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center ml-1 mb-1">
-                <label className="block text-slate-700 text-sm font-semibold">Password</label>
-                <a href="#" className="text-blue-600 hover:text-blue-700 text-xs font-semibold transition-colors">Forgot Password?</a>
-              </div>
+              <label className="block text-slate-700 text-sm font-semibold ml-1">Password</label>
               <input
                 type="password"
                 value={password}

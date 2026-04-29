@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import Card from '../components/Card';
@@ -6,18 +6,68 @@ import SafetyScore from '../components/SafetyScore';
 import PanicButton from '../components/PanicButton';
 import AlertCard from '../components/AlertCard';
 import MapView from '../components/MapView';
+import BatteryMonitor from '../components/BatteryMonitor';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, MapPin, Activity, Menu } from 'lucide-react';
+import { ShieldCheck, MapPin, Activity } from 'lucide-react';
+import io from 'socket.io-client';
+import api from '../services/api';
+
+const socket = io('http://localhost:5000');
 
 const TouristDashboard = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [location, setLocation] = useState({ lat: 0, lng: 0 });
+  const [recentAlerts, setRecentAlerts] = useState([]);
+  const [safeRouteEnd, setSafeRouteEnd] = useState(null);
 
-  // Mock static data for now as requested
-  const recentAlerts = [
-    { id: 1, title: 'Geofence Warning', message: 'You are approaching the edge of the safe zone (North district).', type: 'warning', time: '10 mins ago' },
-    { id: 2, title: 'Weather Advisory', message: 'Heavy rain expected in 2 hours. Seek shelter.', type: 'safe', time: '1 hr ago' }
-  ];
+  useEffect(() => {
+    // Join socket room
+    if (user?._id) {
+      socket.emit('join', { role: 'Tourist', userId: user._id });
+    }
+
+    // Listen for alerts
+    socket.on('new_alert', (alert) => {
+      if (alert.tourist === user?._id || alert.tourist?._id === user?._id) {
+        setRecentAlerts(prev => [
+          {
+            id: alert._id,
+            title: alert.type === 'Anomaly' ? 'AI Alert' : alert.type,
+            message: alert.message,
+            type: alert.type === 'Safe' ? 'safe' : (alert.type === 'Weather' ? 'info' : (alert.type === 'Panic' ? 'danger' : 'warning')),
+            time: 'Just now'
+          },
+          ...prev
+        ]);
+      }
+    });
+
+    // Track geolocation
+    let watchId;
+    if ('geolocation' in navigator) {
+      watchId = navigator.geolocation.watchPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          setLocation({ lat: latitude, lng: longitude });
+
+          // Send to backend
+          try {
+            await api.post('/tourist/location', { lat: latitude, lng: longitude });
+          } catch (error) {
+            console.error('Error updating location:', error);
+          }
+        },
+        (error) => console.error('Geolocation error:', error),
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+      );
+    }
+
+    return () => {
+      socket.off('new_alert');
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [user]);
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
@@ -84,13 +134,33 @@ const TouristDashboard = () => {
                       </div>
                       Live Location Tracking
                     </h3>
-                    <span className="flex h-3 w-3 relative mr-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => {
+                          if (safeRouteEnd) {
+                            setSafeRouteEnd(null);
+                          } else if (location && location.lat !== 0) {
+                            // Dynamically set hotel to be ~500m away from current location
+                            setSafeRouteEnd({ 
+                              lat: location.lat + 0.005, 
+                              lng: location.lng + 0.005 
+                            });
+                          } else {
+                            alert("Waiting for GPS location...");
+                          }
+                        }}
+                        className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${safeRouteEnd ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                      >
+                        {safeRouteEnd ? 'Cancel Route' : 'Route to Hotel'}
+                      </button>
+                      <span className="flex h-3 w-3 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex-1 w-full h-full pt-[60px]">
-                    <MapView location={{ lat: 0, lng: 0 }} />
+                  <div className="flex-1 w-full h-full pt-[60px] z-0">
+                    <MapView location={location} safeRouteEnd={safeRouteEnd} />
                   </div>
                 </Card>
 
@@ -101,7 +171,7 @@ const TouristDashboard = () => {
                 
                 {/* Panic Button Area */}
                 <div>
-                  <PanicButton />
+                  <PanicButton location={location} />
                 </div>
 
                 {/* Recent Alerts Feed */}
@@ -142,6 +212,7 @@ const TouristDashboard = () => {
           </div>
         </main>
       </div>
+      <BatteryMonitor location={location} />
     </div>
   );
 };
