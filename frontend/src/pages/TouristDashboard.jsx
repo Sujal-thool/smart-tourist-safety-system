@@ -7,6 +7,7 @@ import PanicButton from '../components/PanicButton';
 import AlertCard from '../components/AlertCard';
 import MapView from '../components/MapView';
 import BatteryMonitor from '../components/BatteryMonitor';
+import EmergencyContacts from '../components/EmergencyContacts';
 import { useAuth } from '../context/AuthContext';
 import { ShieldCheck, MapPin, Activity } from 'lucide-react';
 import io from 'socket.io-client';
@@ -206,6 +207,11 @@ const TouristDashboard = () => {
                     )}
                   </div>
                 </Card>
+
+                {/* Local Emergency Contacts */}
+                <div>
+                  <EmergencyContacts location={location} />
+                </div>
 
               </div>
             </div>

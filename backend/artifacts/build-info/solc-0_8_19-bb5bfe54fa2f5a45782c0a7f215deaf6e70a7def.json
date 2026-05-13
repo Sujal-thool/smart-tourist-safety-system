@@ -1,0 +1,42 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_19-bb5bfe54fa2f5a45782c0a7f215deaf6e70a7def",
+  "solcVersion": "0.8.19",
+  "solcLongVersion": "0.8.19+commit.7dd6d404",
+  "compilerType": "solc",
+  "userSourceNameMap": {
+    "contracts/TouristIdentity.sol": "project/contracts/TouristIdentity.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "paris",
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/TouristIdentity.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.19;\n\ncontract TouristIdentity {\n    struct Tourist {\n        address wallet;\n        string identityHash;\n        uint256 timestamp;\n        bool isActive;\n    }\n\n    mapping(address => Tourist) public tourists;\n    \n    event IdentityMinted(address indexed wallet, string identityHash, uint256 timestamp);\n\n    function mintIdentity(address _wallet, string memory _identityHash) public {\n        require(!tourists[_wallet].isActive, \"Identity already exists for this wallet\");\n        \n        tourists[_wallet] = Tourist({\n            wallet: _wallet,\n            identityHash: _identityHash,\n            timestamp: block.timestamp,\n            isActive: true\n        });\n\n        emit IdentityMinted(_wallet, _identityHash, block.timestamp);\n    }\n\n    function verifyIdentity(address _wallet, string memory _identityHash) public view returns (bool) {\n        Tourist memory t = tourists[_wallet];\n        return (t.isActive && keccak256(abi.encodePacked(t.identityHash)) == keccak256(abi.encodePacked(_identityHash)));\n    }\n}\n"
+      }
+    }
+  }
+}

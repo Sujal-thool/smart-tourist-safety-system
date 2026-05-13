@@ -32,10 +32,11 @@ export const sendEmergencySMS = async (alertType, message, lat, lng) => {
     }
   } else {
     // Mock delivery for testing without credentials
-    console.log('\n=======================================');
-    console.log('📱 [MOCK SMS DISPATCHED]');
-    console.log(`To: ${dispatchPhoneNumber}`);
-    console.log(`Message: \n${smsBody}`);
-    console.log('=======================================\n');
+    console.log(`\n=======================================
+📱 [MOCK SMS DISPATCHED]
+To: ${dispatchPhoneNumber}
+Message: 
+${smsBody}
+=======================================\n`);
   }
 };

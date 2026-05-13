@@ -1,13 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import Card from '../components/Card';
 import { useAuth } from '../context/AuthContext';
-import { QrCode, ShieldCheck, Mail, Phone, Calendar, UserRound } from 'lucide-react';
+import { ShieldCheck, Mail, Phone, Calendar, UserRound, Edit2, Check, X } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const ProfilePage = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [touristIdData, setTouristIdData] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ fullName: '', nationality: '' });
+
+  useEffect(() => {
+    const fetchTouristId = async () => {
+      try {
+        const res = await api.get('/tourist/id');
+        setTouristIdData(res.data);
+        setEditForm({ fullName: res.data.fullName, nationality: res.data.nationality });
+      } catch (err) {
+        console.error("Failed to fetch Tourist ID", err);
+      }
+    };
+    if (user?.role === 'Tourist') {
+      fetchTouristId();
+    }
+  }, [user]);
+
+  const handleSave = async () => {
+    try {
+      const res = await api.put('/tourist/id', editForm);
+      setTouristIdData(res.data);
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Failed to update Tourist ID", err);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
@@ -56,8 +86,8 @@ const ProfilePage = () => {
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-bold text-slate-800">{user?.name || "Jane Tourist"}</h3>
-                  <p className="text-sm text-slate-500 font-medium">Tourist ID: TID-948274</p>
+                  <h3 className="text-xl font-bold text-slate-800">{touristIdData?.fullName || user?.name || "Jane Tourist"}</h3>
+                  <p className="text-sm text-slate-500 font-medium">Tourist ID: {touristIdData?.documentNumber || "TID-948274"}</p>
                   
                   <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold uppercase rounded-full tracking-wider border border-blue-100">
                     <ShieldCheck size={14} /> KYC Verified
@@ -66,7 +96,11 @@ const ProfilePage = () => {
                   <div className="w-full border-t border-slate-100 mt-6 pt-6 flex flex-col items-center">
                     <p className="text-xs text-slate-400 font-medium uppercase tracking-wide mb-3">Scan to verify ID</p>
                     <div className="p-3 bg-white border border-slate-200 shadow-[0_0_10px_rgba(0,0,0,0.05)] rounded-xl group-hover:scale-105 transition-transform duration-300">
-                      <QrCode size={120} strokeWidth={1} className="text-slate-800" />
+                      {touristIdData?.blockchainHash ? (
+                        <QRCodeSVG value={touristIdData.blockchainHash} size={120} />
+                      ) : (
+                        <div className="w-[120px] h-[120px] bg-slate-100 animate-pulse rounded-lg"></div>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -76,17 +110,41 @@ const ProfilePage = () => {
               <div className="md:col-span-2 space-y-6 md:space-y-8">
                 
                 <Card>
-                  <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                    Personal Information
-                  </h3>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                      Personal Information
+                    </h3>
+                    {!isEditing ? (
+                      <button onClick={() => setIsEditing(true)} className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
+                        <Edit2 size={14} /> Edit
+                      </button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button onClick={() => { setIsEditing(false); setEditForm({ fullName: touristIdData?.fullName, nationality: touristIdData?.nationality }); }} className="flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors">
+                          <X size={14} /> Cancel
+                        </button>
+                        <button onClick={handleSave} className="flex items-center gap-1 text-xs font-semibold text-white bg-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">
+                          <Check size={14} /> Save
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                       <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Full Name</p>
-                      <p className="font-medium text-slate-800">{user?.name || "Jane Doe Tourist"}</p>
+                      {isEditing ? (
+                        <input type="text" value={editForm.fullName} onChange={e => setEditForm({...editForm, fullName: e.target.value})} className="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+                      ) : (
+                        <p className="font-medium text-slate-800">{touristIdData?.fullName || user?.name || "Jane Doe Tourist"}</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Nationality</p>
-                      <p className="font-medium text-slate-800">Canadian</p>
+                      {isEditing ? (
+                        <input type="text" value={editForm.nationality} onChange={e => setEditForm({...editForm, nationality: e.target.value})} className="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+                      ) : (
+                        <p className="font-medium text-slate-800">{touristIdData?.nationality || "Not Specified"}</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1 hover:text-blue-500 transition-colors">

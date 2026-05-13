@@ -16,9 +16,11 @@
     "leaflet-routing-machine": "^3.2.12",
     "leaflet.heat": "^0.2.0",
     "lucide-react": "^0.577.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-leaflet": "^5.0.0",
+    "react-qr-code": "^2.0.21",
     "react-router-dom": "^7.13.1",
     "socket.io-client": "^4.8.3"
   },

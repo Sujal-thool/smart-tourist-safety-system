@@ -18,7 +18,7 @@ const PanicButton = ({ location }) => {
       });
       setTriggered(true);
       setTimeout(() => setTriggered(false), 5000); // Reset UI after 5 seconds but police knows
-    } catch (error) {
+    } catch {
       alert('Failed to send SOS. Please call local authorities manually.');
     } finally {
       setLoading(false);
@@ -34,14 +34,16 @@ const PanicButton = ({ location }) => {
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
-    recognition.interimResults = false;
+    recognition.interimResults = true; // Use interim results for faster response
     recognition.lang = 'en-US'; // Defaulting to English, can be expanded later based on user prefs
 
     recognition.onstart = () => setListening(true);
     
     recognition.onresult = (event) => {
-      const current = event.resultIndex;
-      const transcript = event.results[current][0].transcript.trim().toLowerCase();
+      const transcript = Array.from(event.results)
+        .map(result => result[0].transcript)
+        .join(' ')
+        .toLowerCase();
       
       // Trigger panic if safe words are detected
       if (transcript.includes('help') || transcript.includes('emergency')) {
@@ -58,7 +60,7 @@ const PanicButton = ({ location }) => {
       // Auto-restart listening to keep it always active
       try {
         recognition.start();
-      } catch (e) {
+      } catch {
         setListening(false);
       }
     };
@@ -66,8 +68,8 @@ const PanicButton = ({ location }) => {
     // Start listening
     try {
       recognition.start();
-    } catch (e) {
-      console.error("Failed to start speech recognition", e);
+    } catch {
+      console.error("Failed to start speech recognition");
     }
 
     return () => {

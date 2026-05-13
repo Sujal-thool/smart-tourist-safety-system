@@ -22,6 +22,7 @@ export const registerUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        hasDigitalId: false,
         token: generateToken(user._id),
       });
     } else {
@@ -40,11 +41,19 @@ export const loginUser = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (user && (await user.matchPassword(password))) {
+      let hasDigitalId = false;
+      if (user.role === 'Tourist') {
+        const { default: TouristID } = await import('../models/TouristID.js');
+        const idRecord = await TouristID.findOne({ tourist: user._id });
+        if (idRecord) hasDigitalId = true;
+      }
+      
       res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        hasDigitalId,
         token: generateToken(user._id),
       });
     } else {

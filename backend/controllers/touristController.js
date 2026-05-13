@@ -3,8 +3,8 @@ import Location from '../models/Location.js';
 import Alert from '../models/Alert.js';
 import { generateBlockchainHash } from '../services/blockchainService.js';
 import { checkGeoFence } from '../services/geofenceService.js';
-import { detectAnomaly } from '../services/aiService.js';
 import { sendEmergencySMS } from '../services/smsService.js';
+import { checkSevereWeather } from '../services/weatherService.js';
 import { io } from '../server.js';
 
 // @desc    Register Digital Tourist ID (KYC)
@@ -26,6 +26,43 @@ export const registerTouristID = async (req, res) => {
     });
     
     res.status(201).json(touristId);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get Digital Tourist ID (KYC)
+// @route   GET /api/v1/tourist/id
+// @access  Private (Tourist)
+export const getTouristID = async (req, res) => {
+  try {
+    const touristId = await TouristID.findOne({ tourist: req.user._id });
+    if (!touristId) {
+      return res.status(404).json({ message: 'Digital ID not found' });
+    }
+    res.json(touristId);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update Digital Tourist ID
+// @route   PUT /api/v1/tourist/id
+// @access  Private (Tourist)
+export const updateTouristID = async (req, res) => {
+  const { fullName, nationality } = req.body;
+  try {
+    const touristId = await TouristID.findOne({ tourist: req.user._id });
+    if (!touristId) {
+      return res.status(404).json({ message: 'Digital ID not found' });
+    }
+    
+    if (fullName) touristId.fullName = fullName;
+    if (nationality) touristId.nationality = nationality;
+    
+    await touristId.save();
+    
+    res.json(touristId);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -86,7 +123,7 @@ export const updateLocation = async (req, res) => {
 
       try {
         // Call FastAPI ML Service
-        const mlResponse = await fetch('http://localhost:8000/predict', {
+        const mlResponse = await fetch('http://127.0.0.1:8000/predict', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -113,6 +150,28 @@ export const updateLocation = async (req, res) => {
         }
       } catch (err) {
         console.error('ML Service unreachable:', err.message);
+      }
+    }
+
+    // 3. SEVERE WEATHER CHECK
+    const weatherResult = await checkSevereWeather(lat, lng);
+    if (weatherResult.isSevere) {
+      // Check if we already sent a weather alert recently to avoid spamming
+      const recentWeatherAlert = await Alert.findOne({
+        tourist: req.user._id,
+        type: 'Weather',
+        createdAt: { $gte: new Date(Date.now() - 60 * 60 * 1000) } // Last 1 hour
+      });
+
+      if (!recentWeatherAlert) {
+        const alert = await Alert.create({
+          tourist: req.user._id,
+          type: 'Weather',
+          location: { lat, lng },
+          message: weatherResult.message
+        });
+        io.emit('new_alert', alert);
+        sendEmergencySMS('Weather Warning', alert.message, lat, lng);
       }
     }
 

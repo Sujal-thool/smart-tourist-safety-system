@@ -1,10 +1,12 @@
 import express from 'express';
-import { registerTouristID, updateLocation, triggerPanic, triggerBatteryAlert, triggerWeatherAlert, getAlerts, getHeatmapData } from '../controllers/touristController.js';
+import { registerTouristID, getTouristID, updateTouristID, updateLocation, triggerPanic, triggerBatteryAlert, triggerWeatherAlert, getAlerts, getHeatmapData } from '../controllers/touristController.js';
 import { protect, policeOrAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.post('/id', protect, registerTouristID);
+router.get('/id', protect, getTouristID);
+router.put('/id', protect, updateTouristID);
 router.post('/location', protect, updateLocation);
 router.post('/panic', protect, triggerPanic);
 router.post('/battery-alert', protect, triggerBatteryAlert);
