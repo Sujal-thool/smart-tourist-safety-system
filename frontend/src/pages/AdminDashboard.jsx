@@ -3,19 +3,29 @@ import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import Card from '../components/Card';
 import MapView from '../components/MapView';
-import { Users, AlertTriangle, Map, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Users, AlertTriangle, Map, ShieldAlert, CheckCircle2, BatteryWarning, Fingerprint, Activity } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import io from 'socket.io-client';
 import api from '../services/api';
+import AnalyticsPanel from '../components/AnalyticsPanel';
+import EmergencyControlsModal from '../components/EmergencyControlsModal';
 
 const socket = io('http://localhost:5000');
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedTourist, setSelectedTourist] = useState(null);
   
   const [alerts, setAlerts] = useState([]);
   const [tourists, setTourists] = useState({});
+  const [location, setLocation] = useState({ lat: 0, lng: 0 });
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     // Fetch initial alerts
@@ -58,6 +68,22 @@ const AdminDashboard = () => {
       socket.off('new_alert');
     };
   }, [user]);
+
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => console.error("Geolocation error:", error),
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+      );
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  }, []);
 
   // Derived stats
   const stats = [
@@ -104,7 +130,7 @@ const AdminDashboard = () => {
         <Navbar title="Police Admin Console" onMenuClick={() => setSidebarOpen(true)} />
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto w-full p-4 md:p-8">
-          <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+          <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 fade-in-up">
             
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -147,14 +173,17 @@ const AdminDashboard = () => {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+            {/* Analytics Section */}
+            <AnalyticsPanel />
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mt-6">
               
               {/* Left Column (Table & Map) */}
               <div className="lg:col-span-2 space-y-6 md:space-y-8">
                 
                 {/* Map View Area */}
                 <Card className="h-[400px] flex flex-col relative w-full z-0" noPadding>
-                   <MapView location={{lat: 0, lng: 0}} markers={mapMarkers} geofenceCenter={{lat: 28.6139, lng: 77.2090}} showHeatmap={true} />
+                   <MapView location={location} markers={mapMarkers} geofenceCenter={location.lat !== 0 ? location : {lat: 28.6139, lng: 77.2090}} showHeatmap={true} />
                 </Card>
 
                 {/* Tourists Table */}
@@ -164,23 +193,30 @@ const AdminDashboard = () => {
                     <button className="text-sm font-semibold text-blue-600 hover:text-blue-700">Filter</button>
                   </div>
                   
-                  <div className="overflow-x-auto max-h-[300px]">
+                  <div className="overflow-x-auto max-h-[400px]">
                     <table className="w-full text-left border-collapse relative">
                       <thead className="sticky top-0 z-10 bg-slate-50 shadow-sm">
                         <tr className="border-b border-slate-100">
-                          <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tourist ID</th>
+                          <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tourist</th>
                           <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Location</th>
                           <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                          <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Active</th>
                           <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 bg-white">
                         {Object.keys(tourists).length === 0 ? (
-                           <tr><td colSpan="4" className="text-center py-4 text-sm text-slate-500">No active tourists detected</td></tr>
+                           <tr><td colSpan="5" className="text-center py-4 text-sm text-slate-500">No active tourists detected</td></tr>
                         ) : (
-                          Object.entries(tourists).map(([id, t], idx) => (
+                          Object.entries(tourists).map(([id, t], idx) => {
+                            const timeAgo = Math.floor((currentTime - t.timestamp) / 60000);
+                            const lastActiveStr = timeAgo < 1 ? 'Just now' : `${timeAgo}m ago`;
+                            return (
                             <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                              <td className="py-4 px-6 text-sm font-medium text-blue-600">{id.substring(0,8)}</td>
+                              <td className="py-4 px-6">
+                                <p className="text-sm font-bold text-slate-800">John Doe</p>
+                                <p className="text-xs text-slate-500">ID: {id.substring(0,6)}</p>
+                              </td>
                               <td className="py-4 px-6 text-sm text-slate-500">{t.lat.toFixed(4)}, {t.lng.toFixed(4)}</td>
                               <td className="py-4 px-6">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
@@ -191,11 +227,17 @@ const AdminDashboard = () => {
                                   {t.status}
                                 </span>
                               </td>
+                              <td className="py-4 px-6 text-sm text-slate-500">{lastActiveStr}</td>
                               <td className="py-4 px-6 text-right">
-                                <button className="text-slate-400 hover:text-blue-600 text-sm font-medium">View</button>
+                                <button 
+                                  onClick={() => setSelectedTourist({ id, ...t })}
+                                  className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                                >
+                                  Action
+                                </button>
                               </td>
                             </tr>
-                          ))
+                          )})
                         )}
                       </tbody>
                     </table>
@@ -222,20 +264,49 @@ const AdminDashboard = () => {
                       <p className="text-slate-400 text-center mt-10 text-sm">No active alerts.</p>
                     ) : (
                       alerts.map(alert => {
-                        const isDanger = alert.type === 'Panic' || alert.type === 'Anomaly';
+                        const isPanic = alert.type === 'Panic';
+                        const isAnomaly = alert.type === 'Anomaly';
+                        const isGeofence = alert.type === 'Geofence';
+                        const isBattery = alert.type === 'Low Battery';
+                        
+                        let bgColor = 'bg-slate-800/50';
+                        let borderColor = 'border-slate-700';
+                        let textColor = 'text-amber-400';
+                        let Icon = AlertTriangle;
+
+                        if (isPanic) {
+                          bgColor = 'bg-red-500/10'; borderColor = 'border-red-500/20'; textColor = 'text-red-400'; Icon = ShieldAlert;
+                        } else if (isAnomaly) {
+                          bgColor = 'bg-orange-500/10'; borderColor = 'border-orange-500/20'; textColor = 'text-orange-400'; Icon = Activity;
+                        } else if (isBattery) {
+                          bgColor = 'bg-emerald-500/10'; borderColor = 'border-emerald-500/20'; textColor = 'text-emerald-400'; Icon = BatteryWarning;
+                        } else if (isGeofence) {
+                          bgColor = 'bg-blue-500/10'; borderColor = 'border-blue-500/20'; textColor = 'text-blue-400'; Icon = Map;
+                        }
+
                         return (
-                          <div key={alert._id} className={`p-4 rounded-xl border ${isDanger ? 'bg-red-500/10 border-red-500/20' : 'bg-slate-800/50 border-slate-700'}`}>
+                          <div key={alert._id} className={`p-4 rounded-xl border ${bgColor} ${borderColor}`}>
                             <div className="flex justify-between items-start mb-2">
-                              <h4 className={`text-sm font-bold ${isDanger ? 'text-red-400' : 'text-amber-400'}`}>
-                                {alert.type}
+                              <h4 className={`text-sm font-bold flex items-center gap-1.5 ${textColor}`}>
+                                <Icon size={16} /> {alert.type}
                               </h4>
                               <span className="text-xs text-slate-400 font-medium">{new Date(alert.createdAt).toLocaleTimeString()}</span>
                             </div>
                             <p className="text-sm text-slate-300 mb-4">{alert.message}</p>
                             <div className="flex gap-2">
-                              <button className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-bold text-white transition-colors">Investigate</button>
-                              {isDanger && (
-                                <button className="flex-1 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold text-white shadow-[0_0_15px_rgba(220,38,38,0.4)] transition-all">Dispatch Patrol</button>
+                              <button 
+                                onClick={() => window.alert(`Investigation started for ${alert.type} alert!`)}
+                                className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-bold text-white transition-colors"
+                              >
+                                Investigate
+                              </button>
+                              {(isPanic || isAnomaly || isGeofence) && (
+                                <button 
+                                  onClick={() => window.alert(`Police patrol dispatched to location for ${alert.type} alert!`)}
+                                  className="flex-1 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold text-white shadow-[0_0_15px_rgba(220,38,38,0.4)] transition-all"
+                                >
+                                  Dispatch Patrol
+                                </button>
                               )}
                             </div>
                           </div>
@@ -250,6 +321,12 @@ const AdminDashboard = () => {
           </div>
         </main>
       </div>
+
+      <EmergencyControlsModal 
+        isOpen={selectedTourist !== null} 
+        tourist={selectedTourist} 
+        onClose={() => setSelectedTourist(null)} 
+      />
     </div>
   );
 };

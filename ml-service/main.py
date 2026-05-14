@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from sklearn.ensemble import IsolationForest
+# pyrefly: ignore [missing-import]
 import numpy as np
 import random
 

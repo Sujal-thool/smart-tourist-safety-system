@@ -8,7 +8,12 @@ import AlertCard from '../components/AlertCard';
 import MapView from '../components/MapView';
 import BatteryMonitor from '../components/BatteryMonitor';
 import EmergencyContacts from '../components/EmergencyContacts';
+import SafetyStatusPanel from '../components/SafetyStatusPanel';
+import NearbySafeZones from '../components/NearbySafeZones';
+import WeatherWidget from '../components/WeatherWidget';
+import Chatbot from '../components/Chatbot';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { ShieldCheck, MapPin, Activity } from 'lucide-react';
 import io from 'socket.io-client';
 import api from '../services/api';
@@ -17,10 +22,11 @@ const socket = io('http://localhost:5000');
 
 const TouristDashboard = () => {
   const { user } = useAuth();
+  const reactLocation = useLocation();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [location, setLocation] = useState({ lat: 0, lng: 0 });
   const [recentAlerts, setRecentAlerts] = useState([]);
-  const [safeRouteEnd, setSafeRouteEnd] = useState(null);
+  const [safeRouteEnd, setSafeRouteEnd] = useState(reactLocation.state?.routeTo || null);
 
   useEffect(() => {
     // Join socket room
@@ -91,7 +97,7 @@ const TouristDashboard = () => {
         <Navbar title="Dashboard" onMenuClick={() => setSidebarOpen(true)} />
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto w-full p-4 md:p-8">
-          <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+          <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 fade-in-up">
             
             {/* Welcome Banner */}
             <div>
@@ -112,18 +118,7 @@ const TouristDashboard = () => {
                     <SafetyScore score={92} />
                   </Card>
                   
-                  <Card className="flex flex-col justify-center">
-                    <div className="flex items-center gap-3 text-slate-500 font-medium mb-2">
-                      <div className="p-2 bg-blue-50 rounded-lg">
-                        <MapPin size={20} className="text-blue-500" />
-                      </div>
-                      Current Zone
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-800">Downtown Safe District</h3>
-                    <p className="text-sm text-emerald-600 font-semibold mt-2 flex items-center gap-1.5 bg-emerald-50 w-max px-3 py-1 rounded-full">
-                      <ShieldCheck size={16} /> Monitored by security
-                    </p>
-                  </Card>
+                  <SafetyStatusPanel location={location} />
                 </div>
 
                 {/* Map Section */}
@@ -161,25 +156,28 @@ const TouristDashboard = () => {
                     </div>
                   </div>
                   <div className="flex-1 w-full h-full pt-[60px] z-0">
-                    <MapView location={location} safeRouteEnd={safeRouteEnd} />
+                    <MapView location={location} safeRouteEnd={safeRouteEnd} showHeatmap={true} />
                   </div>
                 </Card>
+
+                {/* Weather & Environment Widget */}
+                <WeatherWidget location={location} />
 
               </div>
 
               {/* Right Column (Actions & Alerts) */}
               <div className="space-y-6 md:space-y-8">
                 
-                {/* Panic Button Area */}
                 <div>
-                  <PanicButton location={location} />
+                  <NearbySafeZones />
                 </div>
 
                 {/* Recent Alerts Feed */}
                 <Card className="h-[400px] flex flex-col">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                      Recent Alerts
+                      Alert History
+
                     </h3>
                     <button className="text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors px-3 py-1.5 rounded-lg">
                       View all
@@ -218,7 +216,26 @@ const TouristDashboard = () => {
           </div>
         </main>
       </div>
+      <PanicButton location={location} />
       <BatteryMonitor location={location} />
+      
+      {/* Hidden Dev Tool: Simulate AI Anomaly */}
+      <button 
+        onClick={async () => {
+          try {
+            // Send a massive location jump (1 degree offset) to trigger ML Anomaly
+            await api.post('/tourist/location', { lat: location.lat + 1.0, lng: location.lng + 1.0 });
+            alert("Sent simulated location jump to backend. Check Active Alerts on Admin Dashboard!");
+          } catch (err) {
+            console.error(err);
+          }
+        }}
+        className="fixed bottom-24 right-6 bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg hover:bg-slate-700 transition-colors z-[100]"
+      >
+        Test ML Anomaly
+      </button>
+
+      <Chatbot />
     </div>
   );
 };

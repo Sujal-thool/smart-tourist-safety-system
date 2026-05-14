@@ -82,43 +82,38 @@ const PanicButton = ({ location }) => {
       onClick={handlePanic}
       disabled={loading || triggered}
       className={`
-        relative overflow-hidden group w-full p-6 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-300
+        fixed bottom-8 right-8 z-[1000] w-24 h-24 rounded-full flex flex-col items-center justify-center transition-all duration-300 shadow-[0_10px_25px_rgba(239,68,68,0.4)]
         ${triggered 
-          ? 'bg-red-600 text-white shadow-[0_0_40px_rgba(220,38,38,0.6)] cursor-not-allowed' 
-          : 'bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border-2 border-red-200 hover:border-transparent cursor-pointer shadow-sm hover:shadow-xl hover:shadow-red-500/30'
+          ? 'bg-red-700 text-white shadow-[0_0_40px_rgba(220,38,38,0.8)] cursor-not-allowed scale-110' 
+          : 'bg-red-600 hover:bg-red-700 text-white cursor-pointer hover:scale-110 hover:shadow-[0_0_40px_rgba(239,68,68,0.8)]'
         }
       `}
     >
       {/* Listening Indicator */}
       {listening && !triggered && (
-        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 bg-red-100 rounded-full group-hover:bg-red-500 transition-colors">
+        <div className="absolute top-0 right-0 flex items-center gap-1.5 px-2 py-1 bg-white rounded-full shadow-md">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500 group-hover:bg-white transition-colors"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
           </span>
-          <Mic size={12} className="text-red-600 group-hover:text-white transition-colors" />
+          <Mic size={10} className="text-red-600" />
         </div>
       )}
 
       {/* Pulse effect background when triggered */}
       {triggered && (
-        <span className="absolute inset-0 rounded-2xl animate-ping opacity-20 bg-white"></span>
+        <span className="absolute inset-0 rounded-full animate-ping opacity-20 bg-white"></span>
       )}
       
       {loading ? (
-        <Loader2 size={48} className="animate-spin" />
+        <Loader2 size={32} className="animate-spin mb-1" />
       ) : (
-        <ShieldAlert size={48} className={`transition-transform duration-300 ${triggered ? 'scale-110' : 'group-hover:scale-110'}`} />
+        <ShieldAlert size={32} className={`mb-1 transition-transform duration-300 ${triggered ? 'scale-110' : ''}`} />
       )}
       
-      <div>
-        <h3 className="text-lg font-bold">
-          {triggered ? 'SOS BROADCASTED' : 'EMERGENCY SOS'}
-        </h3>
-        <p className={`text-xs font-medium mt-1 ${triggered ? 'text-red-100' : 'text-red-400 group-hover:text-red-100'}`}>
-          {triggered ? 'Police dispatched to your location' : 'Say "Help" or tap to alert authorities'}
-        </p>
-      </div>
+      <span className="text-xs font-bold uppercase tracking-widest leading-none">
+        {triggered ? 'Sent' : 'SOS'}
+      </span>
     </button>
   );
 };

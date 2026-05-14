@@ -6,9 +6,13 @@ The **Smart Tourist Safety Monitoring System** is an application designed to ens
 It consists of three main components:
 
 ### 1. Frontend (React/Vite)
-- **Dashboards**: Provides separate, interactive web-based dashboards for **Tourists** and **Police/Admins**.
-- **Real-time Map & Heatmap**: Displays active tourist locations on a map. It also renders a historical heatmap of danger zones based on past "Panic", "Anomaly", and "LowBattery" alerts.
-- **Panic Controls**: Allows tourists to instantly trigger SOS signals.
+- **Premium UI/UX**: Features a modern "Glassmorphism" aesthetic with fluid animations, custom scrollbars, and high-quality typography (Inter) for a premium user experience.
+- **Role-Based Dashboards**: Interactive web-based dashboards tailored specifically for **Tourists** and **Police/Admins**.
+- **Real-time Map & Heatmap**: Displays active tourist locations and renders historical heatmaps of danger zones based on past alerts.
+- **Intelligent Environment Widget**: A live weather module tracking Temperature, AQI, and UV Index that dynamically issues local safety advisories (e.g., "Poor Air Quality").
+- **SafeTrax AI Assistant (Chatbot)**: A floating digital concierge with a smart FAQ engine capable of instantly answering critical safety, emergency, and navigation questions.
+- **Explore Places & Routing**: A curated directory of local destinations with embedded safety ratings. It features one-click routing that seamlessly draws navigation paths on the primary dashboard map.
+- **Panic Controls & Battery Monitoring**: Allows tourists to instantly trigger SOS signals and automatically warns authorities if their device battery is critically low.
 
 ### 2. Backend (Node.js/Express)
 - **Core API & Database**: Built with Express and connects to MongoDB to store user profiles, locations, and alert history.

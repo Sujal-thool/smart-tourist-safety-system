@@ -7,6 +7,7 @@ import Onboarding from './pages/Onboarding';
 import TouristDashboard from './pages/TouristDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import ProfilePage from './pages/ProfilePage';
+import TouristPlaces from './pages/TouristPlaces';
 
 // Simple Route Protection
 const PrivateRoute = ({ children, allowedRoles }) => {
@@ -39,6 +40,11 @@ const AppContent = () => {
       <Route path="/tourist/dashboard" element={
         <PrivateRoute allowedRoles={['Tourist']}>
           <TouristDashboard />
+        </PrivateRoute>
+      } />
+      <Route path="/tourist/places" element={
+        <PrivateRoute allowedRoles={['Tourist']}>
+          <TouristPlaces />
         </PrivateRoute>
       } />
       

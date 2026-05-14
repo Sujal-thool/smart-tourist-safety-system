@@ -14,14 +14,12 @@ const Login = () => {
     e.preventDefault();
     try {
       const user = await login(email, password);
-      if (user.role === 'Tourist') {
-        if (!user.hasDigitalId) {
-          navigate('/onboarding');
-        } else {
-          navigate('/tourist/dashboard');
-        }
-      } else {
+      if (user.role === 'Admin') {
         navigate('/police/dashboard');
+      } else if (!user.hasDigitalId) {
+        navigate('/onboarding');
+      } else {
+        navigate('/tourist/dashboard');
       }
     } catch (error) {
       alert(error || 'Login failed');

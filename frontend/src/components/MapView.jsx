@@ -149,7 +149,7 @@ const MapView = ({ location, markers = [], geofenceCenter = null, showHeatmap = 
         {safeRouteEnd && (
           <div className="bg-blue-500/90 text-white backdrop-blur-sm px-4 py-2 rounded-xl shadow-md text-xs font-medium flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-            Routing to Registered Hotel
+            Routing to Destination
           </div>
         )}
       </div>

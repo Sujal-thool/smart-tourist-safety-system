@@ -2,7 +2,7 @@ import React from 'react';
 import Card from './Card';
 import { PhoneCall, ShieldAlert, Ambulance, Flame } from 'lucide-react';
 
-const EmergencyContacts = ({ location }) => {
+const EmergencyContacts = () => {
   // In a full implementation, we could fetch these dynamically based on location.
   // For now, we display universal/common numbers or standard local equivalents.
   
