@@ -6,18 +6,21 @@
     @apply bg-slate-50 text-slate-900 antialiased;
     font-family: 'Inter', sans-serif;
     scroll-behavior: smooth;
+    /* Soft premium background */
+    background: radial-gradient(circle at top left, #f8fafc, #eff6ff 40%, #f1f5f9 100%);
+    background-attachment: fixed;
   }
 
   /* Custom Selection Color */
   ::selection {
-    @apply bg-blue-500/30 text-blue-900;
+    @apply bg-indigo-500/30 text-indigo-900;
   }
 }
 
 /* Custom Sleek Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -25,22 +28,31 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 rounded-full;
+  @apply bg-slate-300/80 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-slate-400;
 }
 
+/* Premium Glassmorphism */
 .glassmorphism {
-  @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+  @apply bg-white/60 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300;
 }
 
-/* Base animation for smooth entry */
+.glassmorphism:hover {
+  @apply bg-white/70 shadow-[0_12px_40px_rgb(0,0,0,0.08)];
+}
+
+/* Base animations */
 .fade-in-up {
-  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(12px);
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
 @keyframes fadeInUp {
@@ -48,4 +60,23 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Utility classes for premium UI */
+.hover-float {
+  @apply transition-transform duration-300 hover:-translate-y-1;
+}
+
+.gradient-text {
+  @apply text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500;
+}
+
+.premium-shadow {
+  @apply shadow-[0_4px_20px_rgba(0,0,0,0.05)];
 }

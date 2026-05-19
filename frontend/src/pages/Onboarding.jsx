@@ -14,14 +14,41 @@ const Onboarding = () => {
     nationality: '',
     documentType: 'Passport',
     documentNumber: '',
+    personalPhone: '',
+    emergencyPhone: ''
   });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const validateDocumentNumber = () => {
+    const { documentType, documentNumber } = formData;
+    if (documentType === 'National ID') {
+      if (!/^\d{12}$/.test(documentNumber)) {
+        return "National ID (Aadhaar) must be exactly 12 digits.";
+      }
+    } else if (documentType === 'Passport') {
+      if (!/^[A-Z0-9]{8,9}$/i.test(documentNumber)) {
+        return "Passport number must be 8-9 alphanumeric characters.";
+      }
+    } else if (documentType === "Driver's License") {
+      if (!/^[A-Z0-9]{10,16}$/i.test(documentNumber)) {
+        return "Driver's License must be 10-16 alphanumeric characters.";
+      }
+    }
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    const errorMsg = validateDocumentNumber();
+    if (errorMsg) {
+      alert(errorMsg);
+      return;
+    }
+    
     setLoading(true);
     
     try {
@@ -93,6 +120,33 @@ const Onboarding = () => {
                       required
                     />
                   </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="space-y-1.5">
+                  <label className="block text-slate-700 text-xs font-semibold ml-1">Personal Phone</label>
+                  <input
+                    type="text"
+                    name="personalPhone"
+                    placeholder="+1 234 567 890"
+                    value={formData.personalPhone}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="block text-slate-700 text-xs font-semibold ml-1">Emergency Contact</label>
+                  <input
+                    type="text"
+                    name="emergencyPhone"
+                    placeholder="+1 987 654 321"
+                    value={formData.emergencyPhone}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    required
+                  />
                 </div>
               </div>
             </div>

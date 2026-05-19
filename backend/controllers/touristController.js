@@ -1,6 +1,7 @@
 import TouristID from '../models/TouristID.js';
 import Location from '../models/Location.js';
 import Alert from '../models/Alert.js';
+import User from '../models/User.js';
 import { generateBlockchainHash } from '../services/blockchainService.js';
 import { checkGeoFence } from '../services/geofenceService.js';
 import { sendEmergencySMS } from '../services/smsService.js';
@@ -11,7 +12,7 @@ import { io } from '../server.js';
 // @route   POST /api/v1/tourist/id
 // @access  Private (Tourist)
 export const registerTouristID = async (req, res) => {
-  const { documentType, documentNumber, fullName, nationality } = req.body;
+  const { documentType, documentNumber, fullName, nationality, personalPhone, emergencyPhone } = req.body;
   try {
     const kycData = { documentType, documentNumber, fullName, nationality, timestamp: Date.now() };
     const blockchainHash = await generateBlockchainHash(kycData); // Mocks blockchain anchoring
@@ -22,6 +23,8 @@ export const registerTouristID = async (req, res) => {
       documentNumber,
       fullName,
       nationality,
+      personalPhone,
+      emergencyPhone,
       blockchainHash
     });
     
@@ -50,7 +53,7 @@ export const getTouristID = async (req, res) => {
 // @route   PUT /api/v1/tourist/id
 // @access  Private (Tourist)
 export const updateTouristID = async (req, res) => {
-  const { fullName, nationality } = req.body;
+  const { fullName, nationality, personalPhone, emergencyPhone } = req.body;
   try {
     const touristId = await TouristID.findOne({ tourist: req.user._id });
     if (!touristId) {
@@ -59,6 +62,8 @@ export const updateTouristID = async (req, res) => {
     
     if (fullName) touristId.fullName = fullName;
     if (nationality) touristId.nationality = nationality;
+    if (personalPhone) touristId.personalPhone = personalPhone;
+    if (emergencyPhone) touristId.emergencyPhone = emergencyPhone;
     
     await touristId.save();
     
@@ -80,7 +85,7 @@ export const updateLocation = async (req, res) => {
     });
     
     // Broadcast location to police dashboard instantly via WebSocket
-    io.emit('location_update', { touristId: req.user._id, lat, lng });
+    io.emit('location_update', { touristId: req.user._id, touristName: req.user.name, lat, lng });
 
     // 1. GEO-FENCING CHECK
     const isBreached = checkGeoFence(lat, lng);
@@ -92,7 +97,8 @@ export const updateLocation = async (req, res) => {
         message: 'Tourist breached the 50km safe zone radius.'
       });
       io.emit('new_alert', alert); // Notify police
-      sendEmergencySMS('GeoFence Breach', alert.message, lat, lng);
+      const touristInfo = await TouristID.findOne({ tourist: req.user._id });
+      sendEmergencySMS('GeoFence Breach', alert.message, lat, lng, touristInfo?.emergencyPhone);
     }
 
     // 2. AI ANOMALY DETECTION (Machine Learning Service)
@@ -145,7 +151,8 @@ export const updateLocation = async (req, res) => {
               anomalyScore: mlData.score
             });
             io.emit('new_alert', alert);
-            sendEmergencySMS('AI Anomaly', alert.message, lat, lng);
+            const touristInfo = await TouristID.findOne({ tourist: req.user._id });
+            sendEmergencySMS('AI Anomaly', alert.message, lat, lng, touristInfo?.emergencyPhone);
           }
         }
       } catch (err) {
@@ -171,7 +178,8 @@ export const updateLocation = async (req, res) => {
           message: weatherResult.message
         });
         io.emit('new_alert', alert);
-        sendEmergencySMS('Weather Warning', alert.message, lat, lng);
+        const touristInfo = await TouristID.findOne({ tourist: req.user._id });
+        sendEmergencySMS('Weather Warning', alert.message, lat, lng, touristInfo?.emergencyPhone);
       }
     }
 
@@ -196,7 +204,8 @@ export const triggerPanic = async (req, res) => {
     
     // Instantly notify everyone on the WebSocket (Police/Admin)
     io.emit('new_alert', alert);
-    sendEmergencySMS('PANIC SOS', alert.message, lat, lng);
+    const touristInfo = await TouristID.findOne({ tourist: req.user._id });
+    sendEmergencySMS('PANIC SOS', alert.message, lat, lng, touristInfo?.emergencyPhone);
     
     res.status(201).json(alert);
   } catch (error) {
@@ -218,7 +227,8 @@ export const triggerBatteryAlert = async (req, res) => {
     });
     
     io.emit('new_alert', alert);
-    sendEmergencySMS('Low Battery', alert.message, lat, lng);
+    const touristInfo = await TouristID.findOne({ tourist: req.user._id });
+    sendEmergencySMS('Low Battery', alert.message, lat, lng, touristInfo?.emergencyPhone);
     
     res.status(201).json(alert);
   } catch (error) {
@@ -240,7 +250,8 @@ export const triggerWeatherAlert = async (req, res) => {
     });
     
     io.emit('new_alert', alert);
-    sendEmergencySMS('Weather Warning', alert.message, lat || 0, lng || 0);
+    const touristInfo = await TouristID.findOne({ tourist: req.user._id });
+    sendEmergencySMS('Weather Warning', alert.message, lat || 0, lng || 0, touristInfo?.emergencyPhone);
     
     res.status(201).json(alert);
   } catch (error) {
@@ -280,6 +291,45 @@ export const getHeatmapData = async (req, res) => {
     });
 
     res.json(heatmapPoints);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get active tourists (within last 30 minutes)
+// @route   GET /api/v1/tourist/active
+// @access  Private (Police/Admin)
+export const getActiveTourists = async (req, res) => {
+  try {
+    const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+    const activeLocations = await Location.aggregate([
+      { $match: { timestamp: { $gte: thirtyMinsAgo } } },
+      { $sort: { timestamp: -1 } },
+      { $group: { _id: "$tourist", lat: { $first: "$coordinates.lat" }, lng: { $first: "$coordinates.lng" }, timestamp: { $first: "$timestamp" } } }
+    ]);
+    
+    const touristsMap = {};
+    for (const loc of activeLocations) {
+      const user = await User.findById(loc._id);
+      if (user) {
+        touristsMap[loc._id] = { name: user.name, lat: loc.lat, lng: loc.lng, timestamp: loc.timestamp, status: 'Safe' };
+      }
+    }
+    res.json(touristsMap);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get alerts for the logged-in tourist
+// @route   GET /api/v1/tourist/my-alerts
+// @access  Private (Tourist)
+export const getMyAlerts = async (req, res) => {
+  try {
+    const alerts = await Alert.find({ tourist: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(20);
+    res.json(alerts);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

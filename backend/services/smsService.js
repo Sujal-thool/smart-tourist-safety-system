@@ -16,27 +16,36 @@ try {
   console.warn("Twilio failed to initialize. Falling back to mock.");
 }
 
-export const sendEmergencySMS = async (alertType, message, lat, lng) => {
+export const sendEmergencySMS = async (alertType, message, lat, lng, emergencyPhone = null) => {
   const smsBody = `CRITICAL ALERT [${alertType}]: ${message}\nLocation: https://maps.google.com/?q=${lat},${lng}`;
+
+  const numbersToAlert = [dispatchPhoneNumber];
+  if (emergencyPhone) {
+    numbersToAlert.push(emergencyPhone);
+  }
 
   if (client) {
     try {
-      await client.messages.create({
-        body: smsBody,
-        from: twilioPhoneNumber,
-        to: dispatchPhoneNumber
-      });
-      console.log(`✅ [Twilio] SMS dispatched to ${dispatchPhoneNumber}`);
+      for (const number of numbersToAlert) {
+        await client.messages.create({
+          body: smsBody,
+          from: twilioPhoneNumber,
+          to: number
+        });
+        console.log(`✅ [Twilio] SMS dispatched to ${number}`);
+      }
     } catch (error) {
       console.error(`❌ [Twilio] Failed to send SMS:`, error.message);
     }
   } else {
     // Mock delivery for testing without credentials
-    console.log(`\n=======================================
+    for (const number of numbersToAlert) {
+      console.log(`\n=======================================
 📱 [MOCK SMS DISPATCHED]
-To: ${dispatchPhoneNumber}
+To: ${number}
 Message: 
 ${smsBody}
 =======================================\n`);
+    }
   }
 };

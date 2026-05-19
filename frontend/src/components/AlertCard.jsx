@@ -4,28 +4,28 @@ import { AlertCircle, AlertTriangle, ShieldCheck, CloudLightning } from 'lucide-
 const AlertCard = ({ title, message, type = 'warning', time }) => {
   const styles = {
     danger: {
-      bg: 'bg-red-50',
+      bg: 'bg-gradient-to-r from-red-50 to-white',
       border: 'border-red-100',
       iconColor: 'text-red-500',
       titleColor: 'text-red-800',
       Icon: AlertCircle
     },
     warning: {
-      bg: 'bg-amber-50',
+      bg: 'bg-gradient-to-r from-amber-50 to-white',
       border: 'border-amber-100',
       iconColor: 'text-amber-500',
       titleColor: 'text-amber-800',
       Icon: AlertTriangle
     },
     safe: {
-      bg: 'bg-emerald-50',
+      bg: 'bg-gradient-to-r from-emerald-50 to-white',
       border: 'border-emerald-100',
       iconColor: 'text-emerald-500',
       titleColor: 'text-emerald-800',
       Icon: ShieldCheck
     },
     info: {
-      bg: 'bg-blue-50',
+      bg: 'bg-gradient-to-r from-blue-50 to-white',
       border: 'border-blue-100',
       iconColor: 'text-blue-500',
       titleColor: 'text-blue-800',
@@ -37,7 +37,7 @@ const AlertCard = ({ title, message, type = 'warning', time }) => {
   const Icon = config.Icon;
 
   return (
-    <div className={`flex gap-4 p-4 rounded-xl border ${config.bg} ${config.border} transition-all hover:shadow-sm`}>
+    <div className={`flex gap-4 p-4 rounded-xl border ${config.bg} ${config.border} transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 fade-in-up`}>
       <div className={`mt-0.5 ${config.iconColor}`}>
         <Icon size={24} />
       </div>

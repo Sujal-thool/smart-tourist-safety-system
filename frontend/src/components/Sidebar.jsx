@@ -17,12 +17,12 @@ const Sidebar = ({ role }) => {
   const links = role === 'Police' || role === 'Admin' ? adminLinks : touristLinks;
 
   return (
-    <div className="w-64 h-full bg-white/80 backdrop-blur-xl flex flex-col border-r border-slate-100/50 shadow-[4px_0_24px_rgb(0,0,0,0.02)] relative z-20">
+    <div className="w-64 h-full glassmorphism flex flex-col border-r-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)] relative z-20">
       {/* Brand Logo */}
       <div className="h-20 flex items-center px-8 border-b border-slate-100/50">
-        <div className="flex items-center gap-3 text-blue-600 font-bold text-xl tracking-tight">
-          <Shield className="fill-blue-600 text-white" size={28} />
-          SafeTrax
+        <div className="flex items-center gap-3 font-bold text-xl tracking-tight">
+          <Shield className="fill-indigo-600 text-white" size={28} />
+          <span className="gradient-text">SafeTrax</span>
         </div>
       </div>
 
@@ -35,8 +35,8 @@ const Sidebar = ({ role }) => {
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
                 isActive 
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 translate-x-1' 
-                  : 'text-slate-500 hover:bg-blue-50/50 hover:text-blue-600 hover:translate-x-1'
+                  ? 'bg-gradient-to-r from-indigo-600 to-blue-500 text-white premium-shadow translate-x-1' 
+                  : 'text-slate-500 hover:bg-indigo-50/50 hover:text-indigo-600 hover:translate-x-1'
               }`
             }
           >

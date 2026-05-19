@@ -25,7 +25,10 @@ const EmergencyControlsModal = ({ isOpen, onClose, tourist }) => {
         {/* Action Grid */}
         <div className="p-6 grid grid-cols-1 gap-4">
           
-          <button className="flex items-center gap-4 p-4 rounded-xl border border-blue-100 bg-blue-50 hover:bg-blue-100 hover:border-blue-200 transition-all text-left group">
+          <button 
+            onClick={() => alert(`Initiating contact with tourist ${tourist.name || tourist.id.substring(0,8)}...`)}
+            className="flex items-center gap-4 p-4 rounded-xl border border-blue-100 bg-blue-50 hover:bg-blue-100 hover:border-blue-200 transition-all text-left group"
+          >
             <div className="p-3 bg-white rounded-lg text-blue-600 shadow-sm group-hover:scale-105 transition-transform">
               <PhoneCall size={24} />
             </div>
@@ -35,7 +38,10 @@ const EmergencyControlsModal = ({ isOpen, onClose, tourist }) => {
             </div>
           </button>
 
-          <button className="flex items-center gap-4 p-4 rounded-xl border border-red-100 bg-red-50 hover:bg-red-100 hover:border-red-200 transition-all text-left group">
+          <button 
+            onClick={() => alert(`Patrol unit dispatched to ${tourist.name || tourist.id.substring(0,8)}'s location!`)}
+            className="flex items-center gap-4 p-4 rounded-xl border border-red-100 bg-red-50 hover:bg-red-100 hover:border-red-200 transition-all text-left group"
+          >
             <div className="p-3 bg-white rounded-lg text-red-600 shadow-sm group-hover:scale-105 transition-transform">
               <ShieldAlert size={24} />
             </div>
@@ -45,7 +51,10 @@ const EmergencyControlsModal = ({ isOpen, onClose, tourist }) => {
             </div>
           </button>
 
-          <button className="flex items-center gap-4 p-4 rounded-xl border border-amber-100 bg-amber-50 hover:bg-amber-100 hover:border-amber-200 transition-all text-left group">
+          <button 
+            onClick={() => alert(`Warning message sent to ${tourist.name || tourist.id.substring(0,8)}'s device.`)}
+            className="flex items-center gap-4 p-4 rounded-xl border border-amber-100 bg-amber-50 hover:bg-amber-100 hover:border-amber-200 transition-all text-left group"
+          >
             <div className="p-3 bg-white rounded-lg text-amber-600 shadow-sm group-hover:scale-105 transition-transform">
               <MessageSquareWarning size={24} />
             </div>
@@ -55,7 +64,10 @@ const EmergencyControlsModal = ({ isOpen, onClose, tourist }) => {
             </div>
           </button>
 
-          <button className="flex items-center gap-4 p-4 rounded-xl border border-emerald-100 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-200 transition-all text-left group">
+          <button 
+            onClick={() => alert(`Blockchain Identity verified for ${tourist.name || tourist.id.substring(0,8)}: KYC Valid.`)}
+            className="flex items-center gap-4 p-4 rounded-xl border border-emerald-100 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-200 transition-all text-left group"
+          >
             <div className="p-3 bg-white rounded-lg text-emerald-600 shadow-sm group-hover:scale-105 transition-transform">
               <Fingerprint size={24} />
             </div>

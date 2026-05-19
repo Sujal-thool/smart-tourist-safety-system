@@ -12,7 +12,7 @@ const ProfilePage = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [touristIdData, setTouristIdData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ fullName: '', nationality: '', emergencyContact: '' });
+  const [editForm, setEditForm] = useState({ fullName: '', nationality: '', personalPhone: '', emergencyPhone: '' });
 
   useEffect(() => {
     const fetchTouristId = async () => {
@@ -22,7 +22,8 @@ const ProfilePage = () => {
         setEditForm({ 
           fullName: res.data.fullName, 
           nationality: res.data.nationality,
-          emergencyContact: res.data.emergencyContact || '+1 234 567 890'
+          personalPhone: res.data.personalPhone || '',
+          emergencyPhone: res.data.emergencyPhone || ''
         });
       } catch (err) {
         console.error("Failed to fetch Tourist ID", err);
@@ -106,6 +107,8 @@ const ProfilePage = () => {
                             Name: touristIdData.fullName || user?.name || "Jane Tourist",
                             Nationality: touristIdData.nationality || "Not Specified",
                             ID: touristIdData.documentNumber || "TID-948274",
+                            Phone: touristIdData.personalPhone || "N/A",
+                            Emergency: touristIdData.emergencyPhone || "N/A",
                             BlockchainHash: touristIdData.blockchainHash || "Pending"
                           })} 
                           size={120} 
@@ -132,7 +135,7 @@ const ProfilePage = () => {
                       </button>
                     ) : (
                       <div className="flex gap-2">
-                        <button onClick={() => { setIsEditing(false); setEditForm({ fullName: touristIdData?.fullName, nationality: touristIdData?.nationality, emergencyContact: touristIdData?.emergencyContact || '+1 234 567 890' }); }} className="flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors">
+                        <button onClick={() => { setIsEditing(false); setEditForm({ fullName: touristIdData?.fullName, nationality: touristIdData?.nationality, personalPhone: touristIdData?.personalPhone || '', emergencyPhone: touristIdData?.emergencyPhone || '' }); }} className="flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors">
                           <X size={14} /> Cancel
                         </button>
                         <button onClick={handleSave} className="flex items-center gap-1 text-xs font-semibold text-white bg-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">
@@ -166,12 +169,22 @@ const ProfilePage = () => {
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1 hover:text-blue-500 transition-colors">
+                        <Phone size={14} className="inline mr-1 -mt-0.5" /> Personal Phone
+                      </p>
+                      {isEditing ? (
+                        <input type="text" value={editForm.personalPhone} onChange={e => setEditForm({...editForm, personalPhone: e.target.value})} className="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="+1 234 567 890" />
+                      ) : (
+                        <p className="font-medium text-slate-800">{touristIdData?.personalPhone || "Not Specified"}</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1 hover:text-blue-500 transition-colors">
                         <Phone size={14} className="inline mr-1 -mt-0.5" /> Emergency Contact
                       </p>
                       {isEditing ? (
-                        <input type="text" value={editForm.emergencyContact} onChange={e => setEditForm({...editForm, emergencyContact: e.target.value})} className="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
+                        <input type="text" value={editForm.emergencyPhone} onChange={e => setEditForm({...editForm, emergencyPhone: e.target.value})} className="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" placeholder="+1 987 654 321" />
                       ) : (
-                        <p className="font-medium text-slate-800">{touristIdData?.emergencyContact || "+1 234 567 890"}</p>
+                        <p className="font-medium text-slate-800">{touristIdData?.emergencyPhone || "Not Specified"}</p>
                       )}
                     </div>
                   </div>

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, User } from 'lucide-react';
 
-const Chatbot = () => {
+const Chatbot = ({ location }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { text: "Hello! I am your SafeTrax AI Assistant. I can help with emergency contacts, local guidelines, and safety info. How can I assist you?", isBot: true }
@@ -24,16 +24,18 @@ const Chatbot = () => {
     // Add user message
     const newMessages = [...messages, { text: input, isBot: false }];
     setMessages(newMessages);
+    const userInput = input;
     setInput('');
 
     // Simulate AI thinking and responding
     setTimeout(() => {
-      const botResponse = generateResponse(input.toLowerCase());
+      const botResponse = generateResponse(userInput);
       setMessages(prev => [...prev, { text: botResponse, isBot: true }]);
     }, 800);
   };
 
-  const generateResponse = (text) => {
+  const generateResponse = (originalText) => {
+    const text = originalText.toLowerCase();
     if (text.includes('police') || text.includes('emergency') || text.includes('help')) {
       return "If this is an emergency, press the red SOS button on your dashboard immediately! You can also dial 112 for the local police.";
     } else if (text.includes('hospital') || text.includes('doctor') || text.includes('medical')) {
@@ -44,8 +46,14 @@ const Chatbot = () => {
       return "You can view or share your Blockchain Digital ID by navigating to 'Profile & ID' from the sidebar menu.";
     } else if (text.includes('places') || text.includes('visit') || text.includes('explore')) {
        return "Maharashtra has beautiful spots! I recommend checking out the Hazur Sahib Gurudwara or the historical forts nearby. Check the 'Explore Places' tab for more!";
+    } else if (text.includes('location') || text.includes('where am i') || text.includes('my location')) {
+       if (location && location.lat !== 0) {
+         return `Your current GPS coordinates are Latitude: ${location.lat.toFixed(4)}, Longitude: ${location.lng.toFixed(4)}. You can see your live position on the map in the dashboard.`;
+       } else {
+         return "I'm still waiting to receive your GPS signal. Please ensure location services are enabled on your device.";
+       }
     } else {
-      return "I'm still learning! For immediate safety assistance, please check your Local Environment widget or use the Emergency Contacts panel.";
+      return `You asked about "${originalText}". As your AI assistant, I can tell you that we prioritize your safety above all else. For specific details regarding this, please check your local dashboard widgets or contact the local tourist helpline.`;
     }
   };
 

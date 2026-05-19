@@ -37,7 +37,16 @@ const AdminDashboard = () => {
         console.error('Failed to fetch alerts', err);
       }
     };
+    const fetchActiveTourists = async () => {
+      try {
+        const res = await api.get('/tourist/active');
+        setTourists(res.data);
+      } catch (err) {
+        console.error('Failed to fetch active tourists', err);
+      }
+    };
     fetchAlerts();
+    fetchActiveTourists();
 
     if (user?._id) {
       socket.emit('join', { role: 'Police', userId: user._id });
@@ -46,17 +55,24 @@ const AdminDashboard = () => {
     socket.on('location_update', (data) => {
       setTourists(prev => ({
         ...prev,
-        [data.touristId]: { lat: data.lat, lng: data.lng, timestamp: Date.now(), status: 'Safe' }
+        [data.touristId]: { 
+          name: data.touristName || 'Unknown', 
+          lat: data.lat, 
+          lng: data.lng, 
+          timestamp: Date.now(), 
+          status: prev[data.touristId]?.status || 'Safe' 
+        }
       }));
     });
 
     socket.on('new_alert', (alert) => {
       setAlerts(prev => [alert, ...prev]);
-      if (alert.tourist && alert.tourist._id) {
+      const touristId = alert.tourist?._id || alert.tourist;
+      if (touristId) {
         setTourists(prev => ({
           ...prev,
-          [alert.tourist._id]: { 
-            ...prev[alert.tourist._id], 
+          [touristId]: { 
+            ...(prev[touristId] || { lat: alert.location?.lat || 0, lng: alert.location?.lng || 0, name: alert.tourist?.name || 'Unknown' }), 
             status: alert.type === 'Panic' ? 'Danger' : 'Warning' 
           }
         }));
@@ -85,6 +101,28 @@ const AdminDashboard = () => {
     }
   }, []);
 
+  const downloadReport = () => {
+    const headers = ['Type', 'Message', 'Tourist Name', 'Latitude', 'Longitude', 'Time'];
+    const rows = alerts.map(a => [
+      a.type,
+      `"${a.message.replace(/"/g, '""')}"`,
+      `"${(a.tourist?.name || 'Unknown').replace(/"/g, '""')}"`,
+      a.location?.lat || 0,
+      a.location?.lng || 0,
+      new Date(a.createdAt).toLocaleString()
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `incident_report_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Derived stats
   const stats = [
     { label: 'Active Tourists', value: Object.keys(tourists).length, icon: <Users size={24} className="text-blue-500" />, bg: 'bg-blue-50' },
@@ -99,7 +137,7 @@ const AdminDashboard = () => {
       lat: t.lat,
       lng: t.lng,
       type: t.status === 'Danger' ? 'alert' : 'user',
-      popupText: `Tourist ID: ${id.substring(0,6)}... (${t.status})`
+      popupText: `${t.name || 'Tourist'} ID: ${id.substring(0,6)}... (${t.status})`
     })),
     ...alerts.map(a => ({
       lat: a.location?.lat || 0,
@@ -110,7 +148,7 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
+    <div className="flex h-screen bg-transparent font-sans overflow-hidden">
       
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
@@ -135,7 +173,7 @@ const AdminDashboard = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-slate-800 tracking-tight">System Overview</h2>
+                <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-blue-500 tracking-tight">System Overview</h2>
                 <p className="text-slate-500">Real-time monitoring and incident response.</p>
               </div>
               <div className="flex items-center gap-3">
@@ -152,7 +190,7 @@ const AdminDashboard = () => {
                 >
                   Broadcast Weather
                 </button>
-                <button className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-2">
+                <button onClick={downloadReport} className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-2">
                   Download Report
                 </button>
               </div>
@@ -209,12 +247,12 @@ const AdminDashboard = () => {
                            <tr><td colSpan="5" className="text-center py-4 text-sm text-slate-500">No active tourists detected</td></tr>
                         ) : (
                           Object.entries(tourists).map(([id, t], idx) => {
-                            const timeAgo = Math.floor((currentTime - t.timestamp) / 60000);
-                            const lastActiveStr = timeAgo < 1 ? 'Just now' : `${timeAgo}m ago`;
+                            const timeAgo = Math.floor((currentTime - new Date(t.timestamp).getTime()) / 60000);
+                            const lastActiveStr = (isNaN(timeAgo) || timeAgo < 1) ? 'Just now' : `${timeAgo}m ago`;
                             return (
                             <tr key={idx} className="hover:bg-slate-50 transition-colors">
                               <td className="py-4 px-6">
-                                <p className="text-sm font-bold text-slate-800">John Doe</p>
+                                <p className="text-sm font-bold text-slate-800">{t.name || 'Unknown Tourist'}</p>
                                 <p className="text-xs text-slate-500">ID: {id.substring(0,6)}</p>
                               </td>
                               <td className="py-4 px-6 text-sm text-slate-500">{t.lat.toFixed(4)}, {t.lng.toFixed(4)}</td>

@@ -32,6 +32,27 @@ const TouristDashboard = () => {
     // Join socket room
     if (user?._id) {
       socket.emit('join', { role: 'Tourist', userId: user._id });
+      
+      const fetchMyAlerts = async () => {
+        try {
+          const res = await api.get('/tourist/my-alerts');
+          const formattedAlerts = res.data.map(alert => {
+            const timeAgo = Math.floor((Date.now() - new Date(alert.createdAt)) / 60000);
+            const timeStr = timeAgo < 60 ? `${timeAgo}m ago` : `${Math.floor(timeAgo/60)}h ago`;
+            return {
+              id: alert._id,
+              title: alert.type === 'Anomaly' ? 'AI Alert' : alert.type,
+              message: alert.message,
+              type: alert.type === 'Safe' ? 'safe' : (alert.type === 'Weather' ? 'info' : (alert.type === 'Panic' ? 'danger' : 'warning')),
+              time: timeAgo < 1 ? 'Just now' : timeStr
+            };
+          });
+          setRecentAlerts(formattedAlerts);
+        } catch (err) {
+          console.error('Failed to fetch historical alerts', err);
+        }
+      };
+      fetchMyAlerts();
     }
 
     // Listen for alerts
@@ -77,7 +98,7 @@ const TouristDashboard = () => {
   }, [user]);
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
+    <div className="flex h-screen bg-transparent font-sans overflow-hidden">
       
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
@@ -101,7 +122,7 @@ const TouristDashboard = () => {
             
             {/* Welcome Banner */}
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
+              <h2 className="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-blue-500 tracking-tight">
                 Hello, {user?.name || 'Traveler'}! 👋
               </h2>
               <p className="text-slate-500 mt-1">Here is your safety overview for today.</p>
@@ -235,7 +256,7 @@ const TouristDashboard = () => {
         Test ML Anomaly
       </button>
 
-      <Chatbot />
+      <Chatbot location={location} />
     </div>
   );
 };
